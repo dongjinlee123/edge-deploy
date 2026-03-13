@@ -6,6 +6,7 @@ import grpc
 
 from app.database import async_session_factory
 from app.models import Device
+from app.services.stream_manager import stream_manager
 from sqlmodel import select
 
 try:
@@ -108,6 +109,18 @@ class DeviceManagementServicer:
             await session.delete(device)
             await session.commit()
         return device_management_pb2.DeleteDeviceResponse(ok=True)
+
+    async def PingDevice(self, request, context):
+        async with async_session_factory() as session:
+            device = await session.get(Device, request.id)
+        if not device:
+            await context.abort(grpc.StatusCode.NOT_FOUND, f"Device {request.id} not found")
+            return
+        reachable = stream_manager.is_connected(device.id)
+        return device_management_pb2.PingDeviceResponse(
+            reachable=reachable,
+            message="online" if reachable else "offline",
+        )
 
 
 def add_to_server(server) -> None:
