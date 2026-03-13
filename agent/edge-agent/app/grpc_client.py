@@ -100,7 +100,10 @@ def _server_tls_channel(addr: str):
 def _registration_addr() -> str:
     if settings.registration_addr:
         return settings.registration_addr
-    # Derive from controller_addr by replacing port with 50052.
+    if not settings.tls_enabled:
+        # Insecure mode: EdgeRegistration is on the main port alongside all services.
+        return settings.controller_addr
+    # TLS mode: EdgeRegistration has its own server-TLS-only port.
     host = settings.controller_addr.split(":")[0]
     return f"{host}:50052"
 

@@ -68,11 +68,11 @@ class DeploymentManagementServicer:
         async with async_session_factory() as session:
             q = select(Deployment)
             if request.HasField("device_id"):
-                q = q.where(Deployment.device_id == request.device_id.value)
+                q = q.where(Deployment.device_id == request.device_id)
             if request.HasField("app_id"):
-                q = q.where(Deployment.app_id == request.app_id.value)
+                q = q.where(Deployment.app_id == request.app_id)
             if request.HasField("status"):
-                q = q.where(Deployment.status == request.status.value)
+                q = q.where(Deployment.status == request.status)
             result = await session.execute(q.order_by(Deployment.created_at.desc()))
             deployments = result.scalars().all()
         return deployment_management_pb2.ListDeploymentsResponse(
