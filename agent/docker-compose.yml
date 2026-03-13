@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  controller:
+    build: ./controller
+    container_name: controller
+    ports:
+      - "8000:8000"   # FastAPI admin (provisioning tokens)
+      - "50051:50051" # gRPC (edge agents + Envoy)
+    volumes:
+      - controller_data:/app/data
+    environment:
+      - CTRL_LOG_LEVEL=info
+    restart: unless-stopped
+
+  envoy:
+    build: ./envoy
+    container_name: envoy
+    ports:
+      - "8082:8082"   # gRPC-Web (browser → Envoy → controller:50051)
+      - "9901:9901"   # Envoy admin
+    depends_on:
+      - controller
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_GRPC_HOST: http://192.168.11.136:8001
+    container_name: frontend
+    ports:
+      - "8001:80"
+    depends_on:
+      - envoy
+    restart: unless-stopped
+
+volumes:
+  controller_data:

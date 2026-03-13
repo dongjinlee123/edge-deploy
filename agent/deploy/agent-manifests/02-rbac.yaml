@@ -1,0 +1,40 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: edge-agent
+rules:
+  - apiGroups: ["", "apps", "batch", "extensions"]
+    resources:
+      - pods
+      - pods/log
+      - services
+      - endpoints
+      - deployments
+      - replicasets
+      - statefulsets
+      - daemonsets
+      - jobs
+      - configmaps
+      - secrets
+      - namespaces
+      - serviceaccounts
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles", "clusterrolebindings", "roles", "rolebindings"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses", "networkpolicies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: edge-agent
+subjects:
+  - kind: ServiceAccount
+    name: edge-agent
+    namespace: edge-agent
+roleRef:
+  kind: ClusterRole
+  name: edge-agent
+  apiGroup: rbac.authorization.k8s.io

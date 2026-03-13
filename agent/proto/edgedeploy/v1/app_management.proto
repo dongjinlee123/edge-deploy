@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package edgedeploy.v1;
+
+option go_package = "github.com/korail/edge-deploy/proto/edgedeploy/v1";
+
+import "google/protobuf/timestamp.proto";
+
+// Frontend-facing CRUD service for application definitions.
+service AppManagement {
+  rpc ListApps  (ListAppsRequest)  returns (ListAppsResponse);
+  rpc GetApp    (GetAppRequest)    returns (AppProto);
+  rpc CreateApp (CreateAppRequest) returns (AppProto);
+  rpc UpdateApp (UpdateAppRequest) returns (AppProto);
+  rpc DeleteApp (DeleteAppRequest) returns (DeleteAppResponse);
+}
+
+message AppProto {
+  int32                    id               = 1;
+  string                   name             = 2;
+  string                   image            = 3;
+  string                   default_tag      = 4;
+  int32                    default_replicas = 5;
+  int32                    default_port     = 6;
+  string                   default_env_json = 7;  // JSON-encoded map
+  string                   yaml_template    = 8;
+  google.protobuf.Timestamp created_at       = 9;
+}
+
+message ListAppsRequest  {}
+message ListAppsResponse { repeated AppProto apps = 1; }
+
+message GetAppRequest    { int32 id = 1; }
+message CreateAppRequest {
+  string name             = 1;
+  string image            = 2;
+  string default_tag      = 3;
+  int32  default_replicas = 4;
+  int32  default_port     = 5;
+  string default_env_json = 6;
+  string yaml_template    = 7;
+}
+message UpdateAppRequest {
+  int32  id               = 1;
+  string name             = 2;
+  string image            = 3;
+  string default_tag      = 4;
+  int32  default_replicas = 5;
+  int32  default_port     = 6;
+  string default_env_json = 7;
+  string yaml_template    = 8;
+}
+message DeleteAppRequest  { int32 id = 1; }
+message DeleteAppResponse { bool ok  = 1; }

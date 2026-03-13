@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package edgedeploy.v1;
+
+option go_package = "github.com/korail/edge-deploy/proto/edgedeploy/v1";
+
+import "google/protobuf/timestamp.proto";
+import "edgedeploy/v1/common.proto";
+
+// Frontend-facing CRUD service for device management.
+service DeviceManagement {
+  rpc ListDevices  (ListDevicesRequest)  returns (ListDevicesResponse);
+  rpc GetDevice    (GetDeviceRequest)    returns (DeviceProto);
+  rpc CreateDevice (CreateDeviceRequest) returns (DeviceProto);
+  rpc UpdateDevice (UpdateDeviceRequest) returns (DeviceProto);
+  rpc DeleteDevice (DeleteDeviceRequest) returns (DeleteDeviceResponse);
+  rpc PingDevice   (PingDeviceRequest)   returns (PingDeviceResponse);
+}
+
+message DeviceProto {
+  int32                    id          = 1;
+  string                   name        = 2;
+  string                   address     = 3;
+  int32                    agent_port  = 4;
+  string                   status      = 5;  // online|offline|unknown
+  google.protobuf.Timestamp last_seen   = 6;
+  Labels                   labels      = 7;
+  google.protobuf.Timestamp created_at  = 8;
+  string                   device_uuid = 9;
+}
+
+message ListDevicesRequest {}
+message ListDevicesResponse {
+  repeated DeviceProto devices = 1;
+}
+
+message GetDeviceRequest    { int32 id = 1; }
+message CreateDeviceRequest {
+  string name       = 1;
+  string address    = 2;
+  int32  agent_port = 3;
+  Labels labels     = 4;
+}
+message UpdateDeviceRequest {
+  int32  id         = 1;
+  string name       = 2;
+  string address    = 3;
+  int32  agent_port = 4;
+  Labels labels     = 5;
+}
+message DeleteDeviceRequest  { int32 id = 1; }
+message DeleteDeviceResponse { bool ok  = 1; }
+
+message PingDeviceRequest  { int32 id = 1; }
+message PingDeviceResponse {
+  bool   reachable = 1;
+  string message   = 2;
+}

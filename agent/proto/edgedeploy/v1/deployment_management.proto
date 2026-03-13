@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package edgedeploy.v1;
+
+option go_package = "github.com/korail/edge-deploy/proto/edgedeploy/v1";
+
+import "google/protobuf/timestamp.proto";
+
+// Frontend-facing CRUD service for deployments and overview.
+service DeploymentManagement {
+  rpc ListDeployments    (ListDeploymentsRequest)    returns (ListDeploymentsResponse);
+  rpc GetDeployment      (GetDeploymentRequest)      returns (DeploymentProto);
+  rpc CreateFormDeployment (CreateFormDeploymentRequest) returns (DeploymentProto);
+  rpc CreateYamlDeployment (CreateYamlDeploymentRequest) returns (DeploymentProto);
+  rpc DeleteDeployment   (DeleteDeploymentRequest)   returns (DeleteDeploymentResponse);
+  rpc RestartDeployment  (RestartDeploymentRequest)  returns (RestartDeploymentResponse);
+  rpc GetDeploymentLogs  (GetDeploymentLogsRequest)  returns (GetDeploymentLogsResponse);
+  rpc BulkDeploy         (BulkDeployRequest)         returns (BulkDeployResponse);
+  rpc GetOverview        (GetOverviewRequest)         returns (OverviewProto);
+}
+
+message DeploymentProto {
+  int32                    id             = 1;
+  int32                    app_id         = 2;
+  int32                    device_id      = 3;
+  string                   namespace      = 4;
+  string                   manifests      = 5;
+  string                   status         = 6;  // pending|deploying|running|failed|stopped
+  string                   status_message = 7;
+  google.protobuf.Timestamp created_at     = 8;
+}
+
+message DeploymentLogProto {
+  int32                    id            = 1;
+  int32                    deployment_id = 2;
+  string                   action        = 3;
+  string                   detail_json   = 4;
+  string                   status        = 5;  // success|failure
+  google.protobuf.Timestamp created_at    = 6;
+}
+
+message ListDeploymentsRequest {
+  optional int32  device_id = 1;
+  optional int32  app_id    = 2;
+  optional string status    = 3;
+}
+message ListDeploymentsResponse { repeated DeploymentProto deployments = 1; }
+
+message GetDeploymentRequest { int32 id = 1; }
+
+message CreateFormDeploymentRequest {
+  int32  app_id    = 1;
+  int32  device_id = 2;
+  string namespace = 3;
+  string tag       = 4;
+  int32  replicas  = 5;
+}
+
+message CreateYamlDeploymentRequest {
+  int32  device_id = 1;
+  string namespace = 2;
+  string manifests = 3;
+}
+
+message DeleteDeploymentRequest  { int32 id = 1; }
+message DeleteDeploymentResponse { bool ok  = 1; }
+
+message RestartDeploymentRequest  { int32 id = 1; }
+message RestartDeploymentResponse { bool ok  = 1; }
+
+message GetDeploymentLogsRequest  { int32 id = 1; }
+message GetDeploymentLogsResponse { repeated DeploymentLogProto logs = 1; }
+
+message BulkDeployRequest {
+  int32         app_id     = 1;
+  repeated int32 device_ids = 2;
+  string        namespace  = 3;
+  string        tag        = 4;
+  int32         replicas   = 5;
+}
+message BulkDeployResponse { repeated DeploymentProto deployments = 1; }
+
+message GetOverviewRequest {}
+message OverviewProto {
+  int32 total_devices     = 1;
+  int32 online_devices    = 2;
+  int32 total_apps        = 3;
+  int32 total_deployments = 4;
+  int32 running_deployments = 5;
+  int32 failed_deployments  = 6;
+}

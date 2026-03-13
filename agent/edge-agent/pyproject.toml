@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "edge-agent"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "kubernetes>=29.0.0",
+    "pyyaml>=6.0",
+    "psutil>=5.9.0",
+    "pydantic-settings>=2.0.0",
+    "grpcio>=1.64.0",
+    "grpcio-tools>=1.64.0",
+    "cryptography>=42.0.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

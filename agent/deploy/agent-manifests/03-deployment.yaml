@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edge-agent
+  namespace: edge-agent
+  labels:
+    app: edge-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: edge-agent
+  template:
+    metadata:
+      labels:
+        app: edge-agent
+    spec:
+      serviceAccountName: edge-agent
+      imagePullSecrets:
+        - name: harbor-creds
+      containers:
+        - name: edge-agent
+          image: 192.168.11.136:30002/korail/edge-agent:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 30080
+          env:
+            - name: AGENT_K8S_IN_CLUSTER
+              value: "true"
+            - name: AGENT_LOG_LEVEL
+              value: "info"
+            # gRPC controller address — required for command stream.
+            # Format: <host>:<port>  (port 50051 insecure, 50051 mTLS)
+            - name: AGENT_CONTROLLER_ADDR
+              value: "192.168.11.136:50051"
+            # Persistent directories — must match the volumeMounts below.
+            - name: AGENT_DATA_DIR
+              value: "/app/data"
+            - name: AGENT_CERT_DIR
+              value: "/app/certs"
+            # Set to "true" in production to enable mTLS.
+            - name: AGENT_TLS_ENABLED
+              value: "false"
+            # One-time provisioning token — only needed on first boot.
+            # Create with: kubectl create secret generic edge-agent-secrets \
+            #   --from-literal=provisioning-token=<token> -n edge-agent
+            - name: AGENT_PROVISIONING_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: edge-agent-secrets
+                  key: provisioning-token
+                  optional: true
+          volumeMounts:
+            - name: agent-data
+              mountPath: /app/data
+            - name: agent-certs
+              mountPath: /app/certs
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 30080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 30080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: agent-data
+          persistentVolumeClaim:
+            claimName: edge-agent-data-pvc
+        - name: agent-certs
+          persistentVolumeClaim:
+            claimName: edge-agent-certs-pvc

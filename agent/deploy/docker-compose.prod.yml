@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  controller:
+    image: 192.168.11.136:30002/korail/controller:latest
+    container_name: controller
+    ports:
+      - "8000:8000"      # FastAPI / HTTP
+      - "50051:50051"    # gRPC — edge-agent CommandStream (insecure or mTLS)
+      - "50052:50052"    # gRPC — EdgeRegistration (server-TLS, first-boot only)
+    volumes:
+      - controller_data:/app/data
+      - controller_certs:/app/certs
+    environment:
+      - CTRL_LOG_LEVEL=info
+      - CTRL_GRPC_TLS_ENABLED=false   # set to "true" to enable mTLS
+    restart: unless-stopped
+
+  frontend:
+    image: 192.168.11.136:30002/korail/frontend:latest
+    container_name: frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - controller
+    restart: unless-stopped
+
+volumes:
+  controller_data:
+  controller_certs:

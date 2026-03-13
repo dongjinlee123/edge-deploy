@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package edgedeploy.v1;
+
+option go_package = "github.com/korail/edge-deploy/proto/edgedeploy/v1";
+
+import "google/protobuf/timestamp.proto";
+
+// Labels are key-value string pairs attached to devices or deployments.
+message Labels {
+  map<string, string> values = 1;
+}
+
+// ResourceRef identifies a Kubernetes resource.
+message ResourceRef {
+  string namespace = 1;
+  string kind = 2;
+  string name = 3;
+}

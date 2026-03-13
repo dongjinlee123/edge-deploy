@@ -1,0 +1,34 @@
+# PersistentVolumeClaims for edge-agent.
+#
+# agent-data  → /app/data  — config_cache.json (offline resilience)
+# agent-certs → /app/certs — device.key, device.crt, ca.crt, device_uuid
+#               Written on first-boot registration; read on every reconnect.
+#               Losing this volume forces re-registration and breaks UUID stability.
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: edge-agent-data-pvc
+  namespace: edge-agent
+  labels:
+    app: edge-agent
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: edge-agent-certs-pvc
+  namespace: edge-agent
+  labels:
+    app: edge-agent
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Mi
