@@ -30,6 +30,15 @@ logger = logging.getLogger(__name__)
 GRPC_PORT = 50051
 GRPC_REGISTRATION_PORT = 50052
 
+# Server-side keepalive — must tolerate client pings to keep bidi streams alive.
+SERVER_OPTIONS = [
+    ("grpc.keepalive_time_ms", 30_000),              # server pings every 30s
+    ("grpc.keepalive_timeout_ms", 5_000),             # wait 5s for pong
+    ("grpc.keepalive_permit_without_calls", 1),       # allow pings with no active RPCs
+    ("grpc.http2.min_ping_interval_without_data_ms", 10_000),  # accept client pings ≥10s apart
+    ("grpc.http2.max_ping_strikes", 0),               # don't penalise frequent pings
+]
+
 # CA key/cert populated at startup when TLS is enabled; imported by the
 # EdgeRegistrationServicer for CSR signing.
 _CA_KEY = None
@@ -61,7 +70,7 @@ async def stop_grpc_server(servers: list[grpc.aio.Server], grace: float = 5.0) -
 # ---------------------------------------------------------------------------
 
 async def _start_insecure_server() -> grpc.aio.Server:
-    server = grpc.aio.server()
+    server = grpc.aio.server(options=SERVER_OPTIONS)
     server.add_insecure_port(f"[::]:{GRPC_PORT}")
     _attach_all_servicers(server)
     _enable_reflection(server)
@@ -95,7 +104,7 @@ async def _start_tls_servers(settings) -> list[grpc.aio.Server]:
         root_certificates=ca_cert_pem,
         require_client_auth=True,
     )
-    main_server = grpc.aio.server()
+    main_server = grpc.aio.server(options=SERVER_OPTIONS)
     main_server.add_secure_port(f"[::]:{GRPC_PORT}", mtls_creds)
     _attach_main_servicers(main_server)
     _enable_reflection(main_server)
@@ -108,7 +117,7 @@ async def _start_tls_servers(settings) -> list[grpc.aio.Server]:
         root_certificates=None,
         require_client_auth=False,
     )
-    reg_server = grpc.aio.server()
+    reg_server = grpc.aio.server(options=SERVER_OPTIONS)
     reg_server.add_secure_port(f"[::]:{GRPC_REGISTRATION_PORT}", tls_creds)
     _attach_registration_servicer(reg_server)
     await reg_server.start()

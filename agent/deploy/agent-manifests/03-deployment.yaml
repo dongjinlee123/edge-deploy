@@ -41,6 +41,11 @@ spec:
             # Set to "true" in production to enable mTLS.
             - name: AGENT_TLS_ENABLED
               value: "false"
+            # Stable device UUID — prevents ghost Device records on pod restarts.
+            - name: AGENT_DEVICE_UUID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             # One-time provisioning token — only needed on first boot.
             # Create with: kubectl create secret generic edge-agent-secrets \
             #   --from-literal=provisioning-token=<token> -n edge-agent

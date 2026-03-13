@@ -9,6 +9,7 @@ import logging
 import uuid
 from datetime import datetime
 
+from app.config import settings
 from app.database import async_session_factory
 from app.models import Device
 from app.services import config_store
@@ -52,6 +53,8 @@ class EdgeControlServicer:
                         # First heartbeat — register stream.
                         device_uuid = report.device_uuid
                         device_id = await _lookup_device_id(device_uuid)
+                        if device_id is None and not settings.grpc_tls_enabled:
+                            device_id = await _auto_create_device(device_uuid)
                         ctx = stream_manager.register(device_uuid, device_id)
                         writer_task = asyncio.create_task(_writer())
                         logger.info(
@@ -142,6 +145,22 @@ async def _maybe_sync_config(ctx, device_id: int, agent_version: int) -> None:
         ),
     )
     await ctx.queue.put(cmd)
+
+
+async def _auto_create_device(device_uuid: str) -> int:
+    """Auto-create a Device record for an unknown UUID (insecure/dev mode only)."""
+    async with async_session_factory() as session:
+        device = Device(
+            device_uuid=device_uuid,
+            status="online",
+            name=f"auto-{device_uuid[:8]}",
+            address="unknown",
+        )
+        session.add(device)
+        await session.commit()
+        await session.refresh(device)
+        logger.info("Auto-created Device: uuid=%s db_id=%d", device_uuid, device.id)
+        return device.id
 
 
 async def _lookup_device_id(device_uuid: str) -> int | None:
